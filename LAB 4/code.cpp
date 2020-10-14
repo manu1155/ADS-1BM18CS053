@@ -1,99 +1,110 @@
-#include<bits/stdc++.h>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-class UnionFind{
-	vector<int> parent;
+
+class DisjointUnionSets{
+	vector<int> rank, parent;
+	int n;
 	public:
-	int count;
-	UnionFind(int n){
-		for(int i=0; i<n; i++){
-			parent.push_back(i);
-		}
-		count = 0;
-	}
-	int find(int x){
-		if(parent[x] == x)
-			return x;
-		return parent[x] = find(parent[x]);
-	}
-	void connect(int x, int y){
-		int rootx = find(x);
-		int rooty = find(y);
-		if(rootx != rooty){
-			parent[rootx] = rooty;
-			count--;
-		}	
-	}
-	void setCount(int n){
-		count = n;
-	}
+    	DisjointUnionSets(int n){
+    		rank.resize(n);
+    		parent.resize(n);
+    		this->n = n;
+    		makeSet();
+    	}
+    
+    
+    	void makeSet(){
+    		for (int i = 0; i < n; i++)
+    			parent[i] = i;
+    	}
+    	
+    	
+    	int find(int x){
+    		if (parent[x] != x)
+    			return find(parent[x]);
+    		return x;
+    	}
+    	
+    	
+    	void Union(int x, int y){
+    		int xRoot = find(x);
+    		int yRoot = find(y);
+    		if (xRoot == yRoot)
+    			return;
+    		if (rank[xRoot] < rank[yRoot])
+    			parent[xRoot] = yRoot;
+    		else if (rank[yRoot] < rank[xRoot])
+    			parent[yRoot] = xRoot;
+            else{
+    			parent[yRoot] = xRoot;
+    			rank[xRoot] = rank[xRoot] + 1;
+    		}
+    	}
 };
 
-int numIslands(vector<vector<int>> mat)
-{
-	int count = 0;
-	int m = mat.size();
-	int n = mat[0].size();
-	for(int i=0; i<m; i++){
-		for(int j=0; j<n; j++){
-			if(mat[i][j])
-				count++;
+
+
+int countIslands(vector<vector<int>> a){
+	int n = a.size();
+	int m = a[0].size();
+	DisjointUnionSets *dus = new DisjointUnionSets(n * m);
+	for (int j = 0; j < n; j++){
+		for (int k = 0; k < m; k++){
+			if (a[j][k] == 0)
+				continue;
+			if (j + 1 < n && a[j + 1][k] == 1)
+				dus->Union(j * (m) + k, (j + 1) * (m) + k);
+			if (j - 1 >= 0 && a[j - 1][k] == 1)
+				dus->Union(j * (m) + k, (j - 1) * (m) + k);
+			if (k + 1 < m && a[j][k + 1] == 1)
+				dus->Union(j * (m) + k, (j) * (m) + k + 1);
+			if (k - 1 >= 0 && a[j][k - 1] == 1)
+				dus->Union(j * (m) + k, (j) * (m) + k - 1);
+			if (j + 1 < n && k + 1 < m && a[j + 1][k + 1] == 1)
+				dus->Union(j * (m) + k, (j + 1) * (m) + k + 1);
+			if (j + 1 < n && k - 1 >= 0 && a[j + 1][k - 1] == 1)
+				dus->Union(j * m + k, (j + 1) * (m) + k - 1);
+			if (j - 1 >= 0 && k + 1 < m && a[j - 1][k + 1] == 1)
+				dus->Union(j * m + k, (j - 1) * m + k + 1);
+			if (j - 1 >= 0 && k - 1 >= 0 && a[j - 1][k - 1] == 1)
+				dus->Union(j * m + k, (j - 1) * m + k - 1);
 		}
 	}
-	UnionFind *uf = new UnionFind(m*n);
-	uf->setCount(count);
-	for(int i=0; i<m; i++){
-		for(int j=0; j<n; j++){
-			if(mat[i][j]){
-				if(i>0 && mat[i-1][j]){
-					uf->connect(n*i+j, n*(i-1)+j);
+	int *c = new int[n * m];
+	int numberOfIslands = 0;
+	for (int j = 0; j < n; j++){
+		for (int k = 0; k < m; k++){
+			if (a[j][k] == 1){
+				int x = dus->find(j * m + k);
+				if (c[x] == 0){
+					numberOfIslands++;
+					c[x]++;
 				}
-				if(i<m-1 && mat[i+1][j]){
-					uf->connect(n*i+j, n*(i+1)+j);
-				}
-				if(j>0 && mat[i][j-1]){
-					uf->connect(n*i+j, n*i+j-1);
-				}
-				if(j<n-1 && mat[i][j+1]){
-					uf->connect(n*i+j, n*i+j+1);
-				}
-				if(i>0 && j>0 && mat[i-1][j-1]){
-					uf->connect(n*i+j, n*(i-1)+j-1);
-				}
-				if(i<m-1 && j<n-1 && mat[i+1][j+1]){
-					uf->connect(n*i+j, n*(i+1)+j+1);
-				}
-				if(i>0 && j<n-1 && mat[i-1][j+1]){
-					uf->connect(n*i+j, n*(i-1)+j+1);
-				}
-				if(i<m-1 && j>0 && mat[i+1][j-1]){
-					uf->connect(n*i+j, n*(i+1)+j-1);
-				}
-			}				
+				else
+					c[x]++;
+			}
 		}
 	}
-	return uf->count;
+	return numberOfIslands;
 }
 
+
+
 int main(){
-	vector<vector<int>>mat;
-	int m,n,val;
-	cout << "Enter the number of rows: ";
-	cin >> m;
-	cout << "Enter the no. of columns: ";
-	cin >> n;
-	cout << "Enter the boolean matrix: " << endl;
-	for(int i=0;i<m; i++){
-		vector<int> row;
-		for(int j=0; j<n; j++){
-			cin >> val;
-			row.push_back(val);
-		}
-		mat.push_back(row);
-	}
-
-	cout << "Number of Islands: "<< numIslands(mat) << endl;
+	int m, n;
+	cout<<"Enter Size of the Matrix : ";
+	cin>>n>>m;
+    vector<vector<int>> a;
+    for (int i = 0; i < n; i++){  
+        vector<int> b;
+        int temp;
+        for (int j = 0; j < m; j++){
+            cin>>temp;
+            b.push_back(temp);
+        }
+        a.push_back(b);
+    }
+	cout << "Number of Islands is: "<< countIslands(a) << endl;
 	return 0;
-
 }
